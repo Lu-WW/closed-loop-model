@@ -225,6 +225,14 @@ class Base():
 
             
 
+
+        if model.find('mi-with-ins-fb')>=0:
+            
+            # for c in range(1,1+self.nchoice):
+            #     self.set_edge(self.id_unc[0],self.id_decision[c],0,1)
+                
+            self.get_urgency_signal=self.no_urgency_signal
+            
         if model.find('mi-driven')>=0:
             
             for c in range(1,1+self.nchoice):

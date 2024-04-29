@@ -25,7 +25,7 @@ if __name__=='__main__':
     high_urg_level=6
     # low_urg_level=0
     low_urg_level=2
-    if model.find('no-urg')>=0:
+    if model.find('no-urg')>=0 or model.find('mi-driven')>=0 or model.find('mi-with-ins-fb')>=0:
         high_urg_level=3
     urgs=range(low_urg_level,high_urg_level,1)
 
