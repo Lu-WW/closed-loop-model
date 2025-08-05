@@ -7,7 +7,15 @@ from analyzer import Analyzer
 from utils import draw_errorbar, draw_bootstrap
 
 def get_samp(setting_list,coh=None,only_choice=None,nsamp = 300):
+  '''
+  get samples of data for settings in setting list and prepare variables for GLM
+  Note the method to calculate strength of inputs v1&v2
 
+  setting list: list of settings to be sampled from
+  coh: only sample from this coherence level
+  only_choice: only sample from this choice response
+  nsamp: number of samples to be drawn from each setting
+  '''
   v1 = []
   v2 = []
   rt = []
@@ -55,44 +63,26 @@ def get_samp(setting_list,coh=None,only_choice=None,nsamp = 300):
       unchosen = (1-a.coh_list[c])*a.input0+baseline
       if a.choice[c,r] == 1:
           chosen, unchosen = unchosen, chosen
-      # conf=a.confidence[c,r]
-      # if conf<0:
-      #   conf=0
-      # chosen=np.log(chosen)
-      # unchosen=np.log(unchosen)
-      # chosen=np.exp(chosen)
-      # unchosen=np.exp(unchosen)
+          
       if noise!=0:
         v1.append(((chosen-unchosen)/(noise)))
         v2.append(((chosen+unchosen)/(noise)))
         rt.append(a.reaction_time[c,r])
         choice.append(a.correct[c,r])
-        # confidence.append(conf)
+        
         confidence.append(a.confidence[c,r])
         uncertainty.append(a.accunc[c,r])
       else:
-        # for i in range(1,6):   
-        #   v1.append(((chosen-unchosen)*i*100))
-        #   v2.append(((chosen+unchosen)*i*100))
-        #   rt.append(a.reaction_time[c,r])
-        #   choice.append(a.correct[c,r])
-        #   confidence.append(a.confidence[c,r])
-        #   uncertainty.append(a.accunc[c,r])
+        
         v1.append(((chosen-unchosen)*100))
         v2.append(((chosen+unchosen)*100))
         rt.append(a.reaction_time[c,r])
         choice.append(a.correct[c,r])
-        # confidence.append(conf)
+        
         confidence.append(a.confidence[c,r])
         uncertainty.append(a.accunc[c,r])
         
-        # v1.append(((chosen-unchosen)*10))
-        # v2.append(((chosen+unchosen)*10))
-        # rt.append(a.reaction_time[c,r])
-        # choice.append(a.correct[c,r])
-        # confidence.append(a.confidence[c,r])
-        # uncertainty.append(a.accunc[c,r])
-          
+        
     os.chdir(f'..')
 
   v1 = np.array(v1).flatten()
@@ -105,24 +95,26 @@ def get_samp(setting_list,coh=None,only_choice=None,nsamp = 300):
   
   m_uncertainty=[np.min(uncertainty),np.max(uncertainty)]
   m_confidence=[np.min(confidence),np.max(confidence)]
-  # m_uncertainty=[0,50]
-  # m_confidence=[-50,50]
+  
   uncertainty=(uncertainty-m_uncertainty[0])/(m_uncertainty[1]-m_uncertainty[0])
   confidence=(confidence-m_confidence[0])/(m_confidence[1]-m_confidence[0])
 
-  
-  # uncertainty=(uncertainty-m_uncertainty[0])/(m_uncertainty[1]-m_uncertainty[0])
-  # confidence=(confidence-m_confidence[0])/(m_confidence[1]-m_confidence[0])
-  
-  # uncertainty=np.log(uncertainty/(1-uncertainty))
-  # confidence=np.log(confidence/(1-confidence))
-  
+
 
   return v1,v2,rt,choice,uncertainty,confidence
 
 
-def input_weight_regression(setting_list,coh=None,rep = 10000, eval_only=False,name='noisy',only_choice=None):
-
+def input_weight_regression(setting_list,coh=None,only_choice=None,rep = 10000, eval_only=False,name='noisy'):
+  '''
+  Calculate GLM regression on metacognitive measures with independently varying stimulus strength and save figures
+  
+  setting_list: list of settings to be calculate
+  coh: only calculate from this coherence level
+  only_choice: only sample from this choice response
+  rep: number of repetitions of the sampling
+  eval_only: if True, load saved parameters from previous run
+  name: name used to save figure
+  '''
   for setting in setting_list:
       if not os.path.isdir(f'./{setting}'):
           print(f'No {setting} setting in {model} model')

@@ -2,18 +2,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def run_aDDM(coh,att_list,dist,rt,input0=1,unatt_coef=0.7,noise_sigma=1,bound=100,maxt=100):
+def run_aDDM(coh,att_list,dist,maxt=100000,input0=1,unatt_coef=0.7,noise_sigma=1,bound=100):
+  '''
+    To run aDDM based on coherence input, attention state list,
+    distribution of attention sate length (for extending attention state list)
+    coh: coherence 
+    att_list: list of (start time, attended item)
+    dist: list of attention length
+    maxt: max trial time step
+    input0: initial input strength
+    unatt_coef: modulation coefficient of the unattended input
+    noise_sigma: noise strength
+  '''
   input1 = input0*(1-coh)
   input2 = input0*(1+coh)
-  k=100
-  data=np.zeros(rt*k)
-  input=np.zeros(rt*k)
+  
+  data=np.zeros(maxt)
+  input=np.zeros(maxt)
   att=0
   i=0
   
   raw_list_len=len(att_list)
   
-  for t in range(1,rt*k):
+  for t in range(1,maxt):
 
 
 
@@ -41,13 +52,15 @@ def run_aDDM(coh,att_list,dist,rt,input0=1,unatt_coef=0.7,noise_sigma=1,bound=10
     if np.abs(data[t])>bound:
       data=data[:t+1]
       input=input[:t+1]
-      att_list.pop()
+      att_list=att_list[:i]
       break
 
   return data,input,t,att_list
 
 def get_data():
-  
+  '''
+  Useful function to run aDDM and save data based analyzer for attention simulation
+  '''
   choice=np.zeros_like(a.choice)
   model_rt=np.zeros_like(a.choice)
   
@@ -59,24 +72,27 @@ def get_data():
     all_att_list.append([])
     for r in trange(a.repn):
       l=a.get_att_list(c,r)
-      rt=int(a.raw_rt[c,r]-a.pret)
-      if rt==0:
-        all_att_list[c].append(l)
-        continue
-      data,input,t,l=run_aDDM(coh,l,mid_len[c],rt)
+      
+      data,input,t,l=run_aDDM(coh,l,mid_len[c])
       choice[c,r]=int(data[-1]>0)+1
       model_rt[c,r]=int(t+1+a.pret)
       all_att_list[c].append(l)
-    print(f'Coherence {coh} accuracy {np.mean(choice[c])}')
+    print(f'Coherence {coh} accuracy {np.mean(choice[c])-1}')
   np.save('aDDM_choice.npy',choice)
   np.save('aDDM_rt.npy',model_rt)
   np.save('aDDM_att_list.npy',all_att_list)
 
 def draw_aDDM_example(c,r):
+  '''
+  
+  Useful function to get a figure of an example trial of aDDM
+  c: coherence number
+  r: repeat number
+  '''
   coh=a.coh_list[c]
   l=a.get_att_list(c,r)
   rt=int(a.raw_rt[c,r]-a.pret)
-  np.random.seed(100)
+  
   data,input,rt,l=run_aDDM(coh,l,mid_len[c],rt)
   plt.figure(figsize=(10,5))
   axes=plt.axes()

@@ -14,13 +14,15 @@ class ReverseExperiment(Experiment):
     def __init__(self,**kwargs):
         super(ReverseExperiment, self).__init__(**kwargs)
  
-
+        ## basic reverse parameters
         self.rev_start=200
         self.rev_len=160
 
         
     def get_input(self,r,I_net,t):
         
+
+        ## apply revesed stimulus (coherence swapped, time flipped)
         if ((t-self.pret)*self.dt>self.rev_start and (t-self.pret)*self.dt<=self.rev_start+self.rev_len):
             rev_t=2*int(self.rev_start/self.dt+self.pret)-t
             r[self.id_sti[2],t],r[self.id_sti[1],t]=r[self.id_sti[1],rev_t],r[self.id_sti[2],rev_t]

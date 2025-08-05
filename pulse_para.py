@@ -10,9 +10,12 @@ from pulse import PulseExperiment,PulseAnalyzer
 
 if __name__=='__main__':
 
+    ### Run pulse experiments with different urgency levels
+
     from utils import init_with_args
     model,setting,eval_only=init_with_args()
 
+    
     exp=PulseExperiment(model=model,setting=setting)
     base_A_urg=exp.A_urg
 

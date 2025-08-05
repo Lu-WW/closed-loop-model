@@ -14,7 +14,7 @@ class AttentionExperiment(Experiment):
     def __init__(self,**kwargs):
         super(AttentionExperiment, self).__init__(**kwargs)
         
-
+        ## basic attention parameters
         self.switch_constant=1/300
         self.switch_coef=0.1
         self.switch_noise=1/100
@@ -44,6 +44,7 @@ class AttentionExperiment(Experiment):
             r[self.id_sti[2],t]=input2+self.input_noise*noise[self.id_sti[2],t-1]+self.input_baseline
 
 
+        ## attention state information
         r[self.id_att_var,:]=0
         r[self.id_att_info,:]=0
         r[self.id_att_status,:]=int(np.random.rand()>0.5)+1
@@ -56,21 +57,26 @@ class AttentionExperiment(Experiment):
         
 
     def get_input(self,r,I_net,t):
+
+        ## update attention state
         delt=(self.switch_constant/(1+self.switch_coef*r[self.id_accunc[0],t-1])+np.random.randn()*self.switch_noise/np.sqrt(self.dt))*self.dt
         r[self.id_att_var,t]=delt
         if (r[self.id_att_var,t-1]<1):
+            ## stay
             r[self.id_att_var,t]+=r[self.id_att_var,t-1]
         r[self.id_att_status,t]=r[self.id_att_status,t-1]
 
         if r[self.id_att_var,t]>=1:
-          r[self.id_att_status,t]=3-r[self.id_att_status,t]
+            ## switch
+            r[self.id_att_status,t]=3-r[self.id_att_status,t]
 
-          r[self.id_att_info,0]+=1
-          cnt=int(r[self.id_att_info,0])
-          r[self.id_att_info,cnt]=t
-          if r[self.id_att_status,t]==1:
-              r[self.id_att_info,cnt]=-t
+            r[self.id_att_info,0]+=1
+            cnt=int(r[self.id_att_info,0])
+            r[self.id_att_info,cnt]=t
+            if r[self.id_att_status,t]==1:
+                r[self.id_att_info,cnt]=-t
 
+        ## apply attention modulation
         attention=int(r[self.id_att_status,t])
         if self.attention_modulation=='input':
             r[self.id_sti[attention],t]*=self.attention_bias
@@ -86,6 +92,7 @@ class AttentionExperiment(Experiment):
 
 
     def get_other_info(self,detailed_trial_data,r,coh,rep):
+        ## help save attention information
         detailed_trial_data[coh,rep,self.id_att_info]=r[self.id_att_info,:self.nsamp]
         
 
@@ -105,6 +112,7 @@ class AttentionAnalyzer(Analyzer,AttentionExperiment):
         self.attention_analysis()
 
     def get_att_list(self,c,r):
+        ## get attention state list
         rt=self.raw_rt[c,r]
         pret=int(self.pret*self.sample_rate)
         if rt==0:
@@ -156,7 +164,9 @@ class AttentionAnalyzer(Analyzer,AttentionExperiment):
                     
                 ret.append(item)
             return ret
-            
+
+
+        ## split attention states into first, mid, last    
         mid_len=[[] for c in range(self.coh_level)]
         first_len=[[] for c in range(self.coh_level)]
         last_len=[[] for c in range(self.coh_level)]

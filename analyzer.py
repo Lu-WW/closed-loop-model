@@ -25,6 +25,7 @@ class Analyzer(Base, Alter):
         
 
     def prepare(self):
+        ## perform some basic data preparation
         self.choice=self.trial_data[...,0]
         self.correct=(self.trial_data[...,0] == 2).astype(float)
         self.raw_rt=self.trial_data[...,1]
@@ -39,9 +40,7 @@ class Analyzer(Base, Alter):
         self.rt_idx=(self.trial_data[...,1]*self.sample_rate).astype(int)
         
     def basic_analysis(self):
-
-
-
+       
         for c in range(self.coh_level):
             print('  ·count of miss trials', np.sum(self.miss[c]))
 
@@ -138,13 +137,15 @@ class Analyzer(Base, Alter):
         plt.savefig('difmot')
 
     def COM_based_on(self):
+        ## prepare variables for calculating changes of mind
         return self.detailed_trial_data[:, :, self.id_motor[1]]-self.detailed_trial_data[:, :, self.id_motor[2]]
 
     def COM_analysis(self, data):
-
+        ## analysis of changes of mind
 
         def get_com(data,post_decision=False,b = 1,tb = 30):
-            
+            ## get changes of mind
+            ## b for absolute strength threshold and tb for time length threshold
             com = np.zeros((self.coh_level, self.repn))
             t_com = np.zeros((self.coh_level, self.nsamp))
             tb=self.sample_rate*tb/self.dt
@@ -229,7 +230,7 @@ class Analyzer(Base, Alter):
 
 
     def get_decision_aligned_data(self):
-
+        ## get data algned with decision
         d=int(self.decision_aligned_delay*self.sample_rate)
         self.decision_aligned_detailed_trial_data = np.zeros_like(
             self.detailed_trial_data)

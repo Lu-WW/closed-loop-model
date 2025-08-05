@@ -12,8 +12,11 @@ class Experiment(Base,Alter):
     """Basic class for running experiments"""
     def __init__(self,**kwargs):
         super(Experiment, self).__init__(**kwargs)
+
+        ## for parallelization
         self.n_pool=16
     def init_sti(self,input_coh,noise,r):
+        ## initialize stimuli
         input1 = self.input0*(1-input_coh)
         input2 = self.input0*(1+input_coh)
 
@@ -22,14 +25,17 @@ class Experiment(Base,Alter):
             r[self.id_sti[2],t]=input2+self.input_noise*noise[self.id_sti[2],t-1]+self.input_baseline
 
     def get_input(self,r,I_net,t):
+        ## apply stimulus input to decision modules
         I_net[self.id_decision[1]] += r[self.id_sti[1],t]
         I_net[self.id_decision[2]] += r[self.id_sti[2],t]
 
     def get_urgency_signal(self,r,I_net,t):
+        ## apply urgency signal to motor modules
         I_net[self.id_motor[1]] += r[self.id_accunc[0],t-1]*self.A_urg
         I_net[self.id_motor[2]] += r[self.id_accunc[0],t-1]*self.A_urg
 
     def get_decision(self,r,t):
+        ## get model choice based on motor modules
         
         if (r[self.id_motor[1], t]) > self.thr:
             return 1
@@ -39,19 +45,15 @@ class Experiment(Base,Alter):
             return 0
     
     def get_add(self,add,r):
-        
+        ## get altered baseline for instantaneous uncertainty
         add[self.id_unc[0]] = self.unc_add
         return add
 
-    def init_trial(self):
-        
+    def run_one(self,input_coh):
+        ## run a trial
         I = np.zeros((self.n_dyn, self.maxt))
         S = np.zeros((self.n_dyn, self.maxt))
         r = np.zeros((self.n_pop, self.maxt))
-        return I,S,r
-    def run_one(self,input_coh):
-        
-        I,S,r = self.init_trial()
         noise = np.zeros((self.n_pop, self.maxt))
         for t in range(1, self.maxt):
             noise[:, t] = noise[:, t - 1] + (-noise[:, t - 1] + np.sqrt(self.tau_noise/self.dt) * self.sigma_noise * np.random.randn(noise.shape[0])) / self.tau_noise * self.dt
@@ -63,7 +65,7 @@ class Experiment(Base,Alter):
         rt=-1
         decision_made=False
         for t in range(1, self.maxt):
-            
+            ## update for each time step
             S[:, t] = S[:, t - 1] + (-S[:, t - 1] / self.tau_N + self.gamma *(1 - S[:, t - 1]) * r[:self.n_dyn,t - 1] / 1000) * self.dt
             I_net = S[:, t - 1] @ self.W 
 
@@ -85,6 +87,7 @@ class Experiment(Base,Alter):
             
             
             if not decision_made and t>=int(self.delay/self.dt) and self.get_decision(r,t-int(self.delay/self.dt)):
+                # check choice
                 decision_made=True
                 rt=t-int(self.delay/self.dt)
                 r[self.id_sti[1],t+1:]=0
@@ -93,6 +96,7 @@ class Experiment(Base,Alter):
         return r,rt
 
     def analyze_trial(self,r,t):
+        ## prepare trial behavioral results
         data=np.zeros(self.trial_data.shape[-1])
         wt=int(10/self.dt)   
         if t<0:
@@ -119,7 +123,7 @@ class Experiment(Base,Alter):
         return data
 
     def getdata(self,coh,rep,r,t,detailed=True):
-
+        ## prepare data to save baeed on parallelization
 
         shm_trial_data=shared_memory.SharedMemory(name=self.shm_names[0])
         trial_data=np.ndarray(self.trial_data.shape,buffer=shm_trial_data.buf)
@@ -145,7 +149,7 @@ class Experiment(Base,Alter):
 
     
     def run_experiment(self,detailed=True):      
-
+        ## run with parrallelization
         shm_trial_data = shared_memory.SharedMemory(create=True, size=self.trial_data.nbytes)
         self.trial_data = np.ndarray(self.trial_data.shape, buffer=shm_trial_data.buf)
         self.trial_data[:] = 0

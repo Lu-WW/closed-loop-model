@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import os
+plt.style.use(f'{os.path.dirname(os.path.abspath(__file__))}/clean.mplstyle')
 import warnings
 warnings.filterwarnings('ignore')
 class Base():
@@ -183,8 +184,7 @@ class Base():
     def init_model(self):
         model=self.model
         
-        #'closed-loop','urg-on-dec-mi','no-urg-mi','mi-urg','no-motor-fb'
-
+            
         if model.find('mi')>=0:
             self.unc_add=-0.1
             
@@ -224,7 +224,6 @@ class Base():
             self.thr = 20
 
             
-
 
         if model.find('mi-with-ins-fb')>=0:
             
@@ -276,7 +275,11 @@ class Base():
             # self.exp_maxt=15000
             # self.maxt = int(self.exp_maxt/self.dt)+self.pret
                     
+        if model.find('motor-on-meta')>=0:
             
+            self.J_m2acc=-self.J_acc/2
+            self.run_one=self.run_one_with_motor_on_meta
+
     def init_setting(self):
         
         setting=self.setting
@@ -327,6 +330,7 @@ class Base():
             if s[i]=='maxt':
                 self.exp_maxt=float(s[i+1])
                 self.maxt = int(self.exp_maxt/self.dt)+self.pret
+                self.nsamp=int(self.maxt*self.dt*self.sample_rate)
                             
             # Stimulus offset delay
             if s[i]=='delay':
@@ -335,5 +339,9 @@ class Base():
             # Input noise scale
             if s[i]=='noise':
                 self.input_noise=float(s[i+1])
+           
+            # Urgency signal scale
+            if s[i]=='urg':
+                self.A_urg*=float(s[i+1])
            
             

@@ -17,6 +17,7 @@ basic_command_list+=['reverse.py','reverse.py -s noise_1','reverse.py -s noise_2
 model_list=['closed-loop','urg-on-dec-mi','no-urg-mi']
 model_list+=['no-motor-fb','no-dec-ff','no-ff-fb']
 model_list+=['mi-driven','mi-urg']
+model_list+=['motor-on-meta']
 
 
 import argparse
@@ -39,33 +40,43 @@ for model in model_list:
         command_list+=['attention.py']
 
 
-        setting_list+=['accunc baseline strength -1']
-        command_list+=['baseline.py -s au_strength_-1']
-
-        setting_list+=['unc baseline strength -1']
-        command_list+=['baseline.py -s unc_strength_-1']
+        setting_list+=['motor baseline weak',]
+        command_list+=['baseline.py -s motor_weak',]
 
 
+        # setting_list+=['fixed_duration noise_1','fixed_duration noise_2','fixed_duration noise_3']
+        # command_list+=['fixed_duration_experiment.py -s maxt_500_noise_1',
+        #                'fixed_duration_experiment.py -s maxt_500_noise_2',
+        #                'fixed_duration_experiment.py -s maxt_500_noise_3']
+        # setting_list+=['fixed_duration maxt_500','fixed_duration maxt_1000','fixed_duration maxt_3000']
+        # command_list+=['fixed_duration_experiment maxt_500_noise_1',
+        #                'fixed_duration_experiment maxt_1000_noise_1',
+        #                'fixed_duration_experiment maxt_3000_noise_1']
 
-        setting_list+=['decision baseline weak','motor baseline weak','decision baseline both','motor baseline both']
-        command_list+=['baseline.py -s decision_weak','baseline.py -s motor_weak','baseline.py -s decision_both','baseline.py -s motor_both']
+
+        # setting_list+=['accunc baseline strength -1']
+        # command_list+=['baseline.py -s au_strength_-1']
+
+        # setting_list+=['unc baseline strength -1']
+        # command_list+=['baseline.py -s unc_strength_-1']
+
+        # setting_list+=['decision baseline weak','decision baseline both','motor baseline both']
+        # command_list+=['baseline.py -s decision_weak','baseline.py -s decision_both','baseline.py -s motor_both']
+
+        # setting_list+=['attention dec','attention mot']
+        # command_list+=['attention.py -s dec','attention.py -s mot']
+
+        # setting_list+=['slowacc','fastacc']
+        # command_list+=['experiment.py -s slowacc','experiment.py -s fastacc']
 
 
-        setting_list+=['attention dec','attention mot']
-        command_list+=['attention.py -s dec','attention.py -s mot']
 
-        setting_list+=['slowacc','fastacc']
-        command_list+=['experiment.py -s slowacc','experiment.py -s fastacc']
+    # if model=='no-motor-fb' or model=='no-dec-ff' or model=='no-ff-fb' or model=='motor-on-meta':
 
-        setting_list+=['urg_para']
-        command_list+=['urg_para.py']
-
-    if model=='no-motor-fb' or model=='no-dec-ff' or model=='no-ff-fb':
-
-        setting_list+=['motor baseline']
-        command_list+=['baseline.py -s motor']
-        setting_list+=['motor baseline weak','motor baseline both']
-        command_list+=['baseline.py -s motor_weak','baseline.py -s motor_both']
+    #     setting_list+=['motor baseline']
+    #     command_list+=['baseline.py -s motor']
+    #     setting_list+=['motor baseline weak','motor baseline both']
+    #     command_list+=['baseline.py -s motor_weak','baseline.py -s motor_both']
 
     print(f'{model} model')
 

@@ -14,7 +14,8 @@ class PulseExperiment(Experiment):
         super(PulseExperiment, self).__init__(**kwargs)
         self.coh_list=[0,0.016,0.032,0.064]
         self.coh_level=len(self.coh_list)
-
+        
+        ## initialize basic pulse settings
         self.pulse_coh=0.128    
         self.pulse=0
         self.pulse_length=100
@@ -27,13 +28,21 @@ class PulseExperiment(Experiment):
 
 
         
-        if self.model.find('urg-on-dec')>=0 or self.model.find('no-urg')>=0:
+        if self.model.find('urg-on-dec')>=0:
+            self.get_DV=self.get_DV_by_dec
+            
+            self.pulse_thr_low=4
+            self.pulse_thr_high=6
+            
+            self.pulse_length=200
+
+
+        if self.model.find('no-urg')>=0:
             self.get_DV=self.get_DV_by_dec
             self.pulse_thr_low=4
             self.pulse_thr_high=6
             
             self.pulse_length=200
-            
 
         self.trial_data_name=f'{self.pulse_type[self.pulse]}_trial_data.npy'
         self.detailed_trial_data_name=f'{self.pulse_type[self.pulse]}_detailed_trial_data.npy'
@@ -57,25 +66,37 @@ class PulseExperiment(Experiment):
         r[self.id_pulse_info,1]=self.maxt+1000/self.dt # pulse time
 
     def get_DV(self,r,t=None):
+        '''
+        get decision variable (based on motor modules)
+        '''
         if t:
             return np.mean(r[...,self.id_motor[2],t-1-self.wl_thr:t]-r[...,self.id_motor[1],t-1-self.wl_thr:t],-1)
         else:
             return r[...,self.id_motor[2],:]-r[...,self.id_motor[1],:]
     def get_input(self,r,I_net,t):
+        '''
+        Apply pulse to the input
+        '''
         pulset=r[self.id_pulse_info,1]
         thr=r[self.id_pulse_info,0]
 
+        ## Start pulse
         if t-1>self.pret+self.pre_pulse_time/self.dt and pulset>self.maxt and np.abs(self.get_DV(r,t))>thr:
             pulset=t
             r[self.id_pulse_info,1]=pulset
 
+        ## Apply pulse
         if t>=pulset and t<pulset+self.pulse_length/self.dt:
             r[self.id_sti[1],t] -= self.input0*(self.pulse_coh*self.pulse)
             r[self.id_sti[2],t] += self.input0*(self.pulse_coh*self.pulse)
+
+            
+        ## End pulse
         if t>=pulset+self.pulse_length/self.dt:
             r[self.id_sti[1],t]=self.input0
             r[self.id_sti[2],t]=self.input0
-            
+            # r[self.id_sti[1],t]=0
+            # r[self.id_sti[2],t]=0
             pass
             
         I_net[self.id_decision[1]] += r[self.id_sti[1],t]
@@ -83,6 +104,9 @@ class PulseExperiment(Experiment):
 
 
     def get_other_info(self,detailed_trial_data,r,coh,rep):
+        '''
+        help save data
+        '''
         detailed_trial_data[coh,rep,self.id_pulse_info]=r[self.id_pulse_info,:self.nsamp]
         
 
@@ -95,6 +119,7 @@ class PulseAnalyzer(Analyzer,PulseExperiment):
     """Class for data analysis of pulse experiments"""
     def __init__(self,**kwargs):
         super(PulseAnalyzer, self).__init__(load_data=False,load_detailed_data=False,**kwargs)
+        ## positive and negative pulse
         self.pa=Analyzer(model=self.model,setting=self.setting,load_data=False,load_detailed_data=False)
         self.na=Analyzer(model=self.model,setting=self.setting,load_data=False,load_detailed_data=False)
 
@@ -176,6 +201,9 @@ class PulseAnalyzer(Analyzer,PulseExperiment):
         plt.savefig('behavior')
 
     def pulse_analysis(self):
+        '''
+        Conduct pulse-related analysis (e.g., see the effect of pulse across DV and time bins) and save figures
+        '''
         negative_pulse_time_data=self.na.detailed_trial_data[:,:,self.id_pulse_info,1]
         positive_pulse_time_data=self.pa.detailed_trial_data[:,:,self.id_pulse_info,1]
         self.pulse_time=np.zeros((2,self.coh_level,self.repn))
@@ -194,8 +222,8 @@ class PulseAnalyzer(Analyzer,PulseExperiment):
             # self.used[1,c]=(positive_pulse_time_data[c]<self.pa.raw_rt[c])*(~self.pa.miss[c])*(positive_pulse_time_data[c]+self.pulse_length/self.dt<self.pa.raw_rt[c])
             
             
-            print('  ·Count of discarded trials (Negative pulse)',self.repn-np.sum(self.used[0,c]))
-            print('  ·Count of discarded trials (Positive pulse)',self.repn-np.sum(self.used[1,c]))
+            print('  ·Count of discarded trials (Negative pulse)',self.repn-np.sum(self.used[0,c]),'/',self.repn)
+            print('  ·Count of discarded trials (Positive pulse)',self.repn-np.sum(self.used[1,c]),'/',self.repn)
 
             for r in range(self.repn):
                 if self.used[0,c,r]:
@@ -363,7 +391,9 @@ class PulseAnalyzer(Analyzer,PulseExperiment):
 
     
         def analyze(to_exclude,to_analyze,name_analyze):
-                
+            '''
+            To control the effect of the 'to_exclude'
+            '''
             nq=10
             b=np.quantile(to_exclude[self.used],[i/nq for i in range(nq+1)])
             
@@ -420,7 +450,6 @@ class PulseAnalyzer(Analyzer,PulseExperiment):
 
         
         init()
-        
         
         
         
